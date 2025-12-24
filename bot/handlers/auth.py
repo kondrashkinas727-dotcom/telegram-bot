@@ -3,7 +3,8 @@
 from aiogram import Router, F
 from aiogram.types import CallbackQuery, Message
 from aiogram.fsm.context import FSMContext
-from telethon.errors import SessionPasswordNeededError
+
+from telethon.errors import SessionPasswordNeededError, PhoneCodeInvalidError
 
 from bot.states.fsm import AuthState
 from bot.handlers.start import user_lang
@@ -15,7 +16,13 @@ router = Router()
 @router.callback_query(F.data == "auth")
 async def auth_start(call: CallbackQuery, state: FSMContext):
     lang = user_lang.get(call.from_user.id, "ru")
-    text = "Введите номер телефона:" if lang == "ru" else "Enter phone number:"
+
+    text = (
+        "Введите номер телефона (пример: +79991234567):"
+        if lang == "ru"
+        else "Enter phone number (example: +79991234567):"
+    )
+
     await state.set_state(AuthState.phone)
     await call.message.answer(text)
     await call.answer()
@@ -25,12 +32,15 @@ async def auth_start(call: CallbackQuery, state: FSMContext):
 async def auth_phone(message: Message, state: FSMContext):
     client = get_client(message.from_user.id)
 
-    if not client.is_connected():
-        await client.connect()
+    await client.connect()
 
-    await client.send_code_request(message.text)
+    result = await client.send_code_request(message.text)
 
-    await state.update_data(phone=message.text)
+    await state.update_data(
+        phone=message.text,
+        phone_code_hash=result.phone_code_hash
+    )
+
     await state.set_state(AuthState.code)
     await message.answer("Введите код из Telegram:")
 
@@ -40,13 +50,18 @@ async def auth_code(message: Message, state: FSMContext):
     data = await state.get_data()
     client = get_client(message.from_user.id)
 
-    if not client.is_connected():
-        await client.connect()
-
     try:
-        await client.sign_in(phone=data["phone"], code=message.text)
+        await client.sign_in(
+            phone=data["phone"],
+            code=message.text,
+            phone_code_hash=data["phone_code_hash"]
+        )
+
         await message.answer("✅ Авторизация успешна")
         await state.clear()
+
+    except PhoneCodeInvalidError:
+        await message.answer("❌ Неверный код. Попробуйте ещё раз.")
 
     except SessionPasswordNeededError:
         await state.set_state(AuthState.password)
@@ -54,19 +69,18 @@ async def auth_code(message: Message, state: FSMContext):
 
     except Exception as e:
         await message.answer(f"❌ Ошибка авторизации:\n{e}")
+        await state.clear()
 
 
 @router.message(AuthState.password)
 async def auth_password(message: Message, state: FSMContext):
     client = get_client(message.from_user.id)
 
-    if not client.is_connected():
-        await client.connect()
-
     try:
         await client.sign_in(password=message.text)
         await message.answer("✅ Авторизация успешна (2FA)")
         await state.clear()
+
     except Exception as e:
         await message.answer(f"❌ Ошибка 2FA:\n{e}")
-
+        await state.clear()
