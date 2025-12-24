@@ -1,3 +1,9 @@
-aiogram==3.*
-telethon
-python-dotenv
+aiogram==3.23.0
+telethon==1.42.0
+python-dotenv==1.0.1
+
+fastapi==0.110.0
+uvicorn==0.29.0
+
+pydantic==2.6.4
+aiohttp==3.9.5
