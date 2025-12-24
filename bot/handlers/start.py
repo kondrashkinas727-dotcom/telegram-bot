@@ -1,8 +1,14 @@
 from aiogram import Router
 from aiogram.types import Message
+from aiogram.filters import Command
 
 router = Router()
 
-@router.message()
-async def start(message: Message):
-    await message.answer("?? ЏаЁўҐв!\n/auth -  ўв®аЁ§ жЁп\n/parse - Ї абЁ­Ј")
+@router.message(Command("start"))
+async def start_cmd(message: Message):
+    await message.answer(
+        "Привет!\n\n"
+        "/auth — авторизация\n"
+        "/parse — парсинг чата или канала"
+    )
+
