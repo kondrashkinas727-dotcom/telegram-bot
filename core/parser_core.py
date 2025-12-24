@@ -1,25 +1,33 @@
+# -*- coding: utf-8 -*-
+
+import os
 from telethon.tl.types import User
-from datetime import datetime
+from core.telethon_core import get_client
 
-class TelegramUserParser:
-    def __init__(self, client):
-        self.client = client
+FILES_DIR = "files"
+os.makedirs(FILES_DIR, exist_ok=True)
 
-    async def parse_users(self, chat):
-        users = {}
-        async for message in self.client.iter_messages(chat):
-            sender = await message.get_sender()
-            if isinstance(sender, User) and sender.id not in users:
-                users[sender.id] = {
-                    "user_id": sender.id,
-                    "username": sender.username,
-                    "first_name": sender.first_name,
-                    "last_name": sender.last_name
-                }
 
-        return {
-            "chat": str(chat),
-            "parsed_at": datetime.utcnow().isoformat(),
-            "total_users": len(users),
-            "users": list(users.values())
-        }
+async def parse_participants(user_id: int, target: str) -> str:
+    """
+    Возвращает путь к файлу с username участников
+    """
+
+    client = get_client(user_id)
+    await client.connect()
+
+    entity = await client.get_entity(target)
+
+    usernames = []
+
+    async for user in client.iter_participants(entity):
+        if isinstance(user, User) and user.username:
+            usernames.append(f"@{user.username}")
+
+    file_path = os.path.join(FILES_DIR, f"participants_{user_id}.txt")
+
+    with open(file_path, "w", encoding="utf-8") as f:
+        for u in usernames:
+            f.write(u + "\n")
+
+    return file_path
