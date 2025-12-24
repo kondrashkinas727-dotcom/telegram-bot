@@ -69,8 +69,18 @@ async def auth_code(message: Message, state: FSMContext):
         await message.answer("🔐 Введите пароль 2FA:")
 
     except Exception as e:
-        await message.answer(f"❌ Ошибка авторизации:\n{e}")
-        await state.clear()
+        text = str(e)
+
+        if "expired" in text.lower():
+            await message.answer(
+                "⌛ Код подтверждения истёк.\n"
+                "Пожалуйста, введите номер телефона ещё раз, чтобы получить новый код."
+            )
+            await state.set_state(AuthState.phone)
+        else:
+            await message.answer(f"❌ Ошибка авторизации:\n{text}")
+            await state.clear()
+
 
 
 @router.message(AuthState.password)
