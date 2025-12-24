@@ -1,0 +1,12 @@
+app = "tg-parser-bot"
+primary_region = "ams"
+[build]
+  dockerfile = "Dockerfile"
+[env]
+  PYTHONUNBUFFERED = "1"
+[[mounts]]
+  source = "sessions"
+  destination = "/app/sessions"
+[[mounts]]
+  source = "files"
+  destination = "/app/files"
