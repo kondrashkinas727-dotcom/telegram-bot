@@ -1,27 +1,11 @@
+# -*- coding: utf-8 -*-
+
 from aiogram import Router
 from aiogram.types import Message
-from aiogram.fsm.context import FSMContext
-from bot.states import ParseState
-from core.telegram_core import TelegramSessionManager
-from core.parser_core import TelegramUserParser
-from core.exporter import export_json
+from aiogram.filters import Command
 
 router = Router()
 
-@router.message(commands=["parse"])
-async def parse_start(message: Message, state: FSMContext):
-    await state.set_state(ParseState.chat)
-    await message.answer("â¯à ¢ìâ¥ ááë«ªã ¨«¨ @username ç â :")
-
-@router.message(ParseState.chat)
-async def parse_chat(message: Message, state: FSMContext):
-    session = TelegramSessionManager(message.from_user.id)
-    client = await session.connect()
-    if not await session.is_authorized():
-        await message.answer("‘­ ç «  ¢ë¯®«­¨â¥ /auth")
-        return
-    parser = TelegramUserParser(client)
-    data = await parser.parse_users(message.text)
-    file_path = export_json(data, f"users_{message.from_user.id}")
-    await message.answer_document(document=open(file_path, "rb"))
-    await state.clear()
+@router.message(Command("parse"))
+async def parse_cmd(message: Message):
+    await message.answer("ĞŸĞ°Ñ€ÑĞµÑ€ Ğ² Ñ€Ğ°Ğ·Ñ€Ğ°Ğ±Ğ¾Ñ‚ĞºĞµ.")

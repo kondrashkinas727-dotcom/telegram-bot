@@ -1,42 +1,11 @@
+# -*- coding: utf-8 -*-
+
 from aiogram import Router
 from aiogram.types import Message
-from aiogram.fsm.context import FSMContext
-from bot.states import AuthState
-from core.telegram_core import TelegramSessionManager
+from aiogram.filters import Command
 
 router = Router()
 
-@router.message(commands=["auth"])
-async def auth_start(message: Message, state: FSMContext):
-    await state.set_state(AuthState.phone)
-    await message.answer("Ç¢•§®‚• ≠Æ¨•‡ ‚•´•‰Æ≠†:")
-
-@router.message(AuthState.phone)
-async def auth_phone(message: Message, state: FSMContext):
-    await state.update_data(phone=message.text)
-    session = TelegramSessionManager(message.from_user.id)
-    await session.connect()
-    await session.send_code(message.text)
-    await state.set_state(AuthState.code)
-    await message.answer("Ç¢•§®‚• ™Æ§ ®ß Telegram:")
-
-@router.message(AuthState.code)
-async def auth_code(message: Message, state: FSMContext):
-    data = await state.get_data()
-    session = TelegramSessionManager(message.from_user.id)
-    await session.connect()
-    result = await session.sign_in(data["phone"], message.text)
-    if result == "2FA":
-        await state.set_state(AuthState.password)
-        await message.answer("Ç¢•§®‚• Ø†‡Æ´Ï 2FA:")
-    else:
-        await state.clear()
-        await message.answer("Ä¢‚Æ‡®ß†Ê®Ô „·Ø•Ë≠†!")
-
-@router.message(AuthState.password)
-async def auth_password(message: Message, state: FSMContext):
-    session = TelegramSessionManager(message.from_user.id)
-    await session.connect()
-    await session.sign_in_password(message.text)
-    await state.clear()
-    await message.answer("Ä¢‚Æ‡®ß†Ê®Ô ß†¢•‡Ë•≠†!")
+@router.message(Command("auth"))
+async def auth_cmd(message: Message):
+    await message.answer("–ê–≤—Ç–æ—Ä–∏–∑–∞—Ü–∏—è –±—É–¥–µ—Ç –¥–æ–±–∞–≤–ª–µ–Ω–∞ –ø–æ–∑–∂–µ.")
