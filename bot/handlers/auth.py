@@ -25,14 +25,17 @@ async def auth_start(call: CallbackQuery, state: FSMContext):
 async def auth_phone(message: Message, state: FSMContext):
     client = get_client(message.from_user.id)
 
-    print("CLIENT ID (PHONE):", id(client))
-
     if not client.is_connected():
         await client.connect()
 
-    await client.send_code_request(message.text)
+    sent = await client.send_code_request(message.text)
 
-    await state.update_data(phone=message.text)
+    # 🔑 КРИТИЧЕСКИ ВАЖНО
+    await state.update_data(
+        phone=message.text,
+        phone_code_hash=sent.phone_code_hash
+    )
+
     await state.set_state(AuthState.code)
     await message.answer("Введите код из Telegram:")
 
@@ -42,16 +45,16 @@ async def auth_code(message: Message, state: FSMContext):
     data = await state.get_data()
     client = get_client(message.from_user.id)
 
-    print("CLIENT ID (CODE):", id(client))
-
     if not client.is_connected():
         await client.connect()
 
     try:
         await client.sign_in(
             phone=data["phone"],
-            code=message.text
+            code=message.text,
+            phone_code_hash=data["phone_code_hash"]
         )
+
         await message.answer("✅ Авторизация успешна")
         await state.clear()
 
@@ -60,7 +63,11 @@ async def auth_code(message: Message, state: FSMContext):
         await message.answer("Введите пароль 2FA:")
 
     except Exception as e:
-        await message.answer(f"❌ Ошибка авторизации:\n{e}")
+        await message.answer(
+            "❌ Ошибка авторизации:\n"
+            "Код истёк или неверный.\n"
+            "Попробуйте начать авторизацию заново."
+        )
         await state.clear()
 
 
