@@ -25,6 +25,7 @@ async def auth_start(call: CallbackQuery, state: FSMContext):
 @router.message(AuthState.phone)
 async def auth_phone(message: Message, state: FSMContext):
     client = get_client(message.from_user.id)
+print("CLIENT ID:", id(client))
 
     if not client.is_connected():
         await client.connect()
@@ -45,6 +46,7 @@ async def auth_phone(message: Message, state: FSMContext):
 async def auth_code(message: Message, state: FSMContext):
     data = await state.get_data()
     client = get_client(message.from_user.id)
+print("CLIENT ID:", id(client))
 
     if not client.is_connected():
         await client.connect()
